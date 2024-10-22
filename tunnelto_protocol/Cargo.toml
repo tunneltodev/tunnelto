@@ -1,0 +1,20 @@
+[package]
+name = "tunnelto_protocol"
+description = "expose your local web server to the internet with a public url"
+version = "0.1.20"
+authors = ["Alex Grinman <alex@tunnelto.dev>"]
+license = "MIT"
+repository = "https://github.com/agrinman/tunnelto"
+readme = "../README.md"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.7.3"
+base64 = "0.11.0"
+sha2 = "0.9.1"
+hex = "0.4.3"
+futures-channel = "0.3"
+futures = "0.3"
+anyhow = "1.0"

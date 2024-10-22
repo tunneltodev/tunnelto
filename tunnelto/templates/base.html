@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="origin">
+    <link rel="icon" href="/static/img/logo.png">
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <style>
+        .show-border {
+            border: 1px solid black;
+        }
+    </style>
+    <title>tunnelto inspector</title>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-body pb-2 columns is-centered max-width-constrained-auto-margin">
+            <div class="column is-four-fifths is-center has-text-centered">
+                <figure class="image container is-96x96">
+                    <img src="/static/img/logo.png">
+                </figure>
+
+                <h1 class="title has-text-white is-family-code">
+                    <a class="has-text-white is-size-4" href="/">
+                        Request Inspector
+                    </a>
+                </h1>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        {% block content %}{% endblock %}
+    </section>
+</body>
+</html>

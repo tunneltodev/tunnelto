@@ -1,0 +1,102 @@
+name: Build and Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build"
+        required: true
+        type: string
+      writeLatest:
+        description: "Overwrite the latest release"
+        required: true
+        default: true
+        type: boolean
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: tag if needed
+        if: ${{ inputs.version }}
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          custom_tag: ${{ inputs.version }}
+          tag_prefix: ""
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: get_version
+        run: echo "version=${{inputs.version || github.ref_name}}" >> "$GITHUB_OUTPUT"
+
+  build:
+    runs-on: ${{ matrix.os }}
+    needs: [setup]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+
+    steps:
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions/checkout@v2
+
+      - id: get_os_arch
+        run: |
+          echo "arch=$(uname -m || ${{ runner.arch }})" >> "$GITHUB_OUTPUT"
+          echo "os=$(uname -s || ${{ runner.os}})" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: cargo build --release -p tunnelto
+
+      - name: Compress
+        run: |
+          mkdir -p app
+          mv target/release/tunnelto app/tunnelto
+          tar -czvf "${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz" app/tunnelto
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz
+          path: ${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz
+
+  publish:
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create version release
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ needs.setup.outputs.version }}
+          tag: ${{ needs.setup.outputs.version }}
+          allowUpdates: true
+          makeLatest: ${{ inputs.writeLatest || false }}
+          artifacts: "artifacts/*.tar.gz"
+          token: ${{ secrets.GITHUB_TOKEN }}
