@@ -124,6 +124,7 @@ jobs:
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: "tunnelto"
+          formula-path: "tunnelto.rb"
           tag-name: "${{ needs.setup.outputs.version}}"
           download-url: "https://github.com/tunneltodev/tunnelto/archive/refs/tags/${{ needs.setup.outputs.version }}.tar.gz"
           homebrew-tap: "tunneltodev/homebrew-tap"
