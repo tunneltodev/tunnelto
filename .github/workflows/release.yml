@@ -81,7 +81,8 @@ jobs:
           name: ${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz
           path: ${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz
 
-  publish:
+  publish_release:
+    name: Publish Release
     needs: [setup, build]
     runs-on: ubuntu-latest
     steps:
@@ -100,3 +101,44 @@ jobs:
           makeLatest: ${{ inputs.writeLatest || false }}
           artifacts: "artifacts/*.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  cargo_publish:
+    name: Cargo publish
+    needs: [setup]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: cargo publish -p tunnelto_protocol --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+      - run: cargo publish -p tunnelto --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+
+  brew_bump:
+    name: Brew bump
+    needs: [setup]
+    runs-on: macos-latest
+    steps:
+      - id: set_url
+        run: |
+          echo "url=https://github.com/tunneltodev/tunnelto/archive/refs/tags/${{ needs.setup.outputs.version }}.tar.gz" >> "$GITHUB_OUTPUT"
+      - name: Download artifact
+        run: |
+          echo "URL is ${{ steps.set_url.outputs.url }}"
+          curl -L -o artifact.tar.gz "$url"
+
+      - name: Get shasum
+        id: get_shasum
+        run: |
+          echo "sha=$(shasum -a 256 artifact.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Bump Brew
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: "tunnelto"
+          tag-name: "${{ needs.setup.outputs.version}}"
+          download-url: "https://github.com/tunneltodev/tunnelto/archive/refs/tags/${{ needs.setup.outputs.version }}.tar.gz"
+          homebrew-tap: "tunneltodev/homebrew-tap"
+        env:
+          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
