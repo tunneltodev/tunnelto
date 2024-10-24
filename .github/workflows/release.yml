@@ -120,19 +120,6 @@ jobs:
     needs: [setup]
     runs-on: macos-latest
     steps:
-      - id: set_url
-        run: |
-          echo "url=https://github.com/tunneltodev/tunnelto/archive/refs/tags/${{ needs.setup.outputs.version }}.tar.gz" >> "$GITHUB_OUTPUT"
-      - name: Download artifact
-        run: |
-          echo "URL is ${{ steps.set_url.outputs.url }}"
-          curl -L -o artifact.tar.gz "$url"
-
-      - name: Get shasum
-        id: get_shasum
-        run: |
-          echo "sha=$(shasum -a 256 artifact.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
-
       - name: Bump Brew
         uses: mislav/bump-homebrew-formula-action@v3
         with:
