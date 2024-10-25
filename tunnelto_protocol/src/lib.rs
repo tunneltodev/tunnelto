@@ -34,37 +34,6 @@ pub enum ServerHello {
     AuthFailed,
     Error(String),
 }
-
-impl ServerHello {
-    #[allow(unused)]
-    pub fn random_domain() -> String {
-        let mut rng = rand::thread_rng();
-        std::iter::repeat(())
-            .map(|_| rng.sample(rand::distributions::Alphanumeric))
-            .take(8)
-            .collect::<String>()
-            .to_lowercase()
-    }
-
-    #[allow(unused)]
-    pub fn prefixed_random_domain(prefix: &str) -> String {
-        format!("{}-{}", prefix, Self::random_domain())
-    }
-
-    pub fn prefixed_client_domain(prefix: &str, client_id: &ClientId, account_id: &str) -> String {
-        let input = format!("{}||{}", client_id, account_id);
-        let hash = sha2::Sha256::digest(input.as_bytes()).to_vec();
-        let encoded = base64::encode_config(&hash, base64::URL_SAFE_NO_PAD)
-            .to_lowercase()
-            .chars()
-            .take_while(|c| c.is_alphanumeric())
-            .take(8)
-            .collect::<String>();
-
-        format!("{}-{}", prefix, encoded)
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClientHello {
     /// deprecated: just send some garbage
