@@ -16,7 +16,8 @@ Written in Rust. Built completely with async-io on top of tokio.
 
 1. [Install](#install)
 2. [Usage Instructions](#usage)
-3. [Host it yourself](#host-it-yourself)
+3. [For agents](#for-agents)
+4. [Host it yourself](#host-it-yourself)
 
 # Install
 
@@ -77,3 +78,16 @@ SUBCOMMANDS:
     help        Prints this message or the help of the given subcommand(s)
     set-auth    Store the API Authentication key
 ```
+
+# For agents
+
+This repo ships an agent skill at [`skills/tunnelto/SKILL.md`](skills/tunnelto/SKILL.md)
+that teaches coding agents (Claude Code, Codex, Cursor, ...) how to install the CLI,
+authenticate, open a tunnel from a script, and read the public URL back.
+
+```bash
+npx skills add tunneltodev/tunnelto
+```
+
+A plain-text guide is also served at https://tunnelto.dev/AGENTS.md.
+
