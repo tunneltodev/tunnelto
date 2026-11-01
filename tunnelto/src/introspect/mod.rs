@@ -4,7 +4,6 @@ use super::*;
 
 use futures::channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
 use futures::StreamExt;
-use hyper::Uri;
 use std::net::SocketAddr;
 use std::vec;
 use uuid::Uuid;
@@ -46,24 +45,18 @@ pub fn start_introspect_web_dashboard(config: Config) -> SocketAddr {
     let dash_addr = SocketAddr::from(([0, 0, 0, 0, 0, 0, 0, 0], config.dashboard_port));
 
     let css = warp::get().and(warp::path!("static" / "css" / "styles.css").map(|| {
-        let mut res = warp::http::Response::new(warp::hyper::Body::from(include_str!(
-            "../../static/css/styles.css"
-        )));
-        res.headers_mut().insert(
+        warp::reply::with_header(
+            include_str!("../../static/css/styles.css"),
             warp::http::header::CONTENT_TYPE,
-            warp::http::header::HeaderValue::from_static("text/css"),
-        );
-        res
+            "text/css",
+        )
     }));
     let logo = warp::get().and(warp::path!("static" / "img" / "logo.png").map(|| {
-        let mut res = warp::http::Response::new(warp::hyper::Body::from(
+        warp::reply::with_header(
             include_bytes!("../../static/img/logo.png").to_vec(),
-        ));
-        res.headers_mut().insert(
             warp::http::header::CONTENT_TYPE,
-            warp::http::header::HeaderValue::from_static("image/png"),
-        );
-        res
+            "image/png",
+        )
     }));
 
     let web_explorer = warp::get()
@@ -80,9 +73,16 @@ pub fn start_introspect_web_dashboard(config: Config) -> SocketAddr {
         .or(css)
         .or(logo);
 
-    let (web_explorer_address, explorer_server) =
-        warp::serve(web_explorer).bind_ephemeral(dash_addr);
-    tokio::spawn(explorer_server);
+    let listener = std::net::TcpListener::bind(dash_addr)
+        .and_then(|l| {
+            l.set_nonblocking(true)?;
+            tokio::net::TcpListener::from_std(l)
+        })
+        .expect("failed to bind introspection dashboard");
+    let web_explorer_address = listener
+        .local_addr()
+        .expect("failed to read dashboard address");
+    tokio::spawn(warp::serve(web_explorer).incoming(listener).run());
 
     web_explorer_address
 }
@@ -295,7 +295,7 @@ async fn replay_request(
         return Err(warp::reject::not_found());
     }
 
-    Ok(Box::new(warp::redirect(Uri::from_static("/"))))
+    Ok(Box::new(warp::redirect(warp::http::Uri::from_static("/"))))
 }
 
 struct Page<T>(T);
