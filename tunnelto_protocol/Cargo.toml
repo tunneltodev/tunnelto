@@ -1,10 +1,10 @@
 [package]
 name = "tunnelto_protocol"
 description = "expose your local web server to the internet with a public url"
-version = "0.1.20"
+version = "0.2.0"
 authors = ["Alex Grinman <alex@tunnelto.dev>"]
 license = "MIT"
-repository = "https://github.com/agrinman/tunnelto"
+repository = "https://github.com/tunneltodev/tunnelto"
 readme = "../README.md"
 edition = "2021"
 

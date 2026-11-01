@@ -1,7 +1,7 @@
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use super::*;
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 
 const HOST_ENV: &'static str = "CTRL_HOST";
 const PORT_ENV: &'static str = "CTRL_PORT";
@@ -18,6 +18,7 @@ const SECRET_KEY_FILE: &'static str = "key.token";
 #[derive(Debug, Parser)]
 #[command(
     name = "tunnelto",
+    version,
     author = "support@tunnelto.dev",
     about = "Expose your local web server to the internet with a public url."
 )]
@@ -86,7 +87,17 @@ impl Config {
     /// Parse the URL to use to connect to the wormhole control server
     pub fn get() -> Result<Config, ()> {
         // parse the opts
-        let opts: Opts = Opts::parse();
+        // Show `tunn` or `tunnelto` in help and errors, whichever was run.
+        let bin_name = std::env::args_os()
+            .next()
+            .and_then(|arg0| {
+                std::path::Path::new(&arg0)
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+            })
+            .unwrap_or_else(|| "tunnelto".to_string());
+        let matches = Opts::command().bin_name(bin_name).get_matches();
+        let opts = Opts::from_arg_matches(&matches).unwrap_or_else(|e| e.exit());
 
         if opts.verbose {
             std::env::set_var("RUST_LOG", "tunnelto=debug");
