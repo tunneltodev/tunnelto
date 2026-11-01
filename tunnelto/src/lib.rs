@@ -189,7 +189,7 @@ async fn run_wormhole_inner(
                 let packet = process_control_flow_message(
                     config.clone(),
                     tunnel_tx.clone(),
-                    message.into_data(),
+                    message.into_data().to_vec(),
                 )
                 .await
                 .map_err(|e| {
@@ -248,7 +248,8 @@ async fn connect_to_wormhole(config: &Config) -> Result<Wormhole, Error> {
         .next()
         .await
         .ok_or(Error::NoResponseFromServer)??
-        .into_data();
+        .into_data()
+        .to_vec();
     let server_hello = serde_json::from_slice::<ServerHello>(&server_hello_data).map_err(|e| {
         error!("Couldn't parse server_hello from {:?}", e);
         Error::ServerReplyInvalid
