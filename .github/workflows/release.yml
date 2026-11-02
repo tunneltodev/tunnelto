@@ -36,50 +36,52 @@ jobs:
         run: echo "version=${{inputs.version || github.ref_name}}" >> "$GITHUB_OUTPUT"
 
   build:
-    runs-on: ${{ matrix.os }}
     needs: [setup]
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: true
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        include:
+          # Asset names must match `uname -s`-`uname -m`, which install.sh uses
+          # to pick a download. Linux builds on 22.04 so the binaries run on
+          # distros with glibc 2.35 or newer.
+          - { runner: ubuntu-22.04, target: x86_64-unknown-linux-gnu, asset: Linux-x86_64 }
+          - { runner: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu, asset: Linux-aarch64 }
+          - { runner: macos-latest, target: aarch64-apple-darwin, asset: Darwin-arm64 }
+          - { runner: macos-latest, target: x86_64-apple-darwin, asset: Darwin-x86_64 }
 
     steps:
-      - name: Cache cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-      - id: get_os_arch
-        run: |
-          echo "arch=$(uname -m || ${{ runner.arch }})" >> "$GITHUB_OUTPUT"
-          echo "os=$(uname -s || ${{ runner.os}})" >> "$GITHUB_OUTPUT"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release -p tunnelto
+        run: cargo build --release --locked -p tunnelto --target ${{ matrix.target }}
+
+      - name: Smoke test
+        if: ${{ matrix.target != 'x86_64-apple-darwin' }}
+        run: |
+          target/${{ matrix.target }}/release/tunnelto --version
+          target/${{ matrix.target }}/release/tunn --version
 
       - name: Compress
         run: |
           mkdir -p app
-          mv target/release/tunnelto app/tunnelto
-          tar -czvf "${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz" app/tunnelto
+          cp target/${{ matrix.target }}/release/tunnelto app/tunnelto
+          cp target/${{ matrix.target }}/release/tunn app/tunn
+          tar -czvf "${{ matrix.asset }}.tar.gz" app/tunnelto app/tunn
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz
-          path: ${{ steps.get_os_arch.outputs.os }}-${{ steps.get_os_arch.outputs.arch }}.tar.gz
+          name: ${{ matrix.asset }}.tar.gz
+          path: ${{ matrix.asset }}.tar.gz
 
   publish_release:
     name: Publish Release
@@ -98,26 +100,25 @@ jobs:
           name: ${{ needs.setup.outputs.version }}
           tag: ${{ needs.setup.outputs.version }}
           allowUpdates: true
-          makeLatest: ${{ inputs.writeLatest || false }}
+          # Tag pushes are real releases: make them "latest", which is what
+          # install.sh downloads. Manual runs follow the writeLatest input.
+          makeLatest: ${{ github.event_name == 'push' || inputs.writeLatest }}
           artifacts: "artifacts/*.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
 
   cargo_publish:
     name: Cargo publish
-    needs: [setup]
+    needs: [setup, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - run: cargo publish -p tunnelto_protocol --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
-      - run: cargo publish -p tunnelto --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo publish --locked -p tunnelto_protocol --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+      - run: cargo publish --locked -p tunnelto --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
 
   brew_bump:
     name: Brew bump
-    needs: [setup]
+    needs: [setup, build]
     runs-on: macos-latest
     steps:
       - name: Bump Brew

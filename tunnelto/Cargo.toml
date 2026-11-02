@@ -1,10 +1,10 @@
 [package]
 name = "tunnelto"
 description = "expose your local web server to the internet with a public url"
-version = "0.1.20"
+version = "0.2.0"
 authors = ["Alex Grinman <alex@tunnelto.dev>"]
 license = "MIT"
-repository = "https://github.com/agrinman/tunnelto"
+repository = "https://github.com/tunneltodev/tunnelto"
 readme = "../README.md"
 edition = "2021"
 
@@ -12,8 +12,12 @@ edition = "2021"
 name = "tunnelto"
 path = "src/main.rs"
 
+[[bin]]
+name = "tunn"
+path = "src/bin/tunn.rs"
+
 [dependencies]
-tunnelto_protocol = { version = "0.1.20", path = "../tunnelto_protocol" }
+tunnelto_protocol = { version = "0.2.0", path = "../tunnelto_protocol" }
 tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
@@ -32,7 +36,7 @@ lazy_static = "1.4.0"
 pretty_env_logger = "0.5"
 dirs = "2.0.2"
 log = "0.4.8"
-human-panic = "1.0.3"
+human-panic = "2"
 clap = { version = "4.5", features = ["derive"] }
 colored = "1.9.3"
 thiserror = "1.0"

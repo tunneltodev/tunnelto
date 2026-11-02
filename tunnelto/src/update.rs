@@ -9,7 +9,7 @@ pub struct Update {
     pub name: String,
 }
 
-const UPDATE_URL: &str = "https://api.github.com/repos/agrinman/tunnelto/releases/latest";
+const UPDATE_URL: &str = "https://api.github.com/repos/tunneltodev/tunnelto/releases/latest";
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub async fn check() {
