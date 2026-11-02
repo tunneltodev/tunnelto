@@ -17,7 +17,8 @@ metadata:
 # tunnelto
 
 `tunnelto` is a single-binary CLI that opens a tunnel from a public
-`https://<subdomain>.tunnelto.dev` URL to a port on this machine. It runs in the
+`https://<subdomain>.tunnelto.dev` (or `https://<subdomain>.tunn.dev`) URL to a
+port on this machine. It runs in the
 foreground and keeps the tunnel open until the process exits.
 
 ## 1. Check for and install the CLI
@@ -48,7 +49,7 @@ still works: it opens an anonymous tunnel on a generated subdomain, and
 ## 3. Open a tunnel
 
 ```bash
-# forward https://<random>.tunnelto.dev -> http://localhost:8000
+# forward https://<random>.tunn.dev -> http://localhost:8000
 tunnelto --port 8000
 
 # with a reserved subdomain (paid plan): https://myapp.tunnelto.dev
@@ -59,12 +60,15 @@ The process blocks. From an agent, run it in the background, write its output
 to a file, and read the public URL back from that file:
 
 ```bash
-NO_COLOR=1 tunnelto --port 8000 > /tmp/tunnelto.log 2>&1 &
+tunnelto --port 8000 > /tmp/tunnelto.log 2>&1 &
 echo $! > /tmp/tunnelto.pid
 
-# wait for the URL (all status output is on stderr; it is merged above)
+# wait for the URL (all status output is on stderr; it is merged above).
+# The URL can be on tunnelto.dev or tunn.dev; the log contains ANSI codes,
+# so strip them before matching.
 for i in $(seq 1 30); do
-  URL=$(grep -oE 'https://[a-z0-9-]+\.tunnelto\.dev' /tmp/tunnelto.log | head -1)
+  URL=$(sed 's/\x1b\[[0-9;]*m//g' /tmp/tunnelto.log \
+    | grep -oE 'https://[a-z0-9-]+\.(tunnelto|tunn)\.dev' | head -1)
   [ -n "$URL" ] && break
   sleep 1
 done
@@ -110,8 +114,11 @@ kill "$(cat /tmp/tunnelto.pid)"
 ## Gotchas
 
 - Everything the CLI prints goes to **stderr**, not stdout. Merge with
-  `2>&1` or read stderr when capturing the URL. Set `NO_COLOR=1` to strip
-  ANSI colour codes.
+  `2>&1` or read stderr when capturing the URL.
+- The output contains ANSI colour codes even when `NO_COLOR=1` is set. Strip
+  them (`sed 's/\x1b\[[0-9;]*m//g'`) before parsing the log.
+- The public URL may be on `tunnelto.dev` or `tunn.dev`. Match both domains
+  and never assume which one you got.
 - The tunnel URL only exists while the process is alive; do not exit the shell
   that started it unless it was backgrounded with `nohup`/`&`.
 - Anonymous tunnels get a generated subdomain. Custom subdomains require an
@@ -126,13 +133,6 @@ kill "$(cat /tmp/tunnelto.pid)"
 - Nothing is cached locally besides `~/.tunnelto/key.token`; deleting that
   directory fully resets the CLI.
 
-## Self-hosting
-
-The server is open source (https://github.com/agrinman/tunnelto). Point the
-client at your own control server with environment variables:
-`CTRL_HOST` (default `wormhole.tunnelto.dev`), `CTRL_PORT` (default `443`), and
-`CTRL_TLS_OFF=1` to use plain `ws://` and `http://`.
-
 ## Installing this skill
 
 ```bash
@@ -145,5 +145,5 @@ mkdir -p ~/.claude/skills/tunnelto && curl -sL https://tunnelto.dev/skills/tunne
 
 - Site and dashboard: https://tunnelto.dev, https://tunnelto.dev/dashboard
 - Agent guide: https://tunnelto.dev/AGENTS.md
-- Source: https://github.com/tunneltodev/tunnelto
+- CLI releases: https://github.com/tunneltodev/tunnelto/releases
 - Support: support@tunnelto.dev
