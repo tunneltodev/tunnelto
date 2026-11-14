@@ -113,8 +113,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo publish --locked -p tunnelto_protocol --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
-      - run: cargo publish --locked -p tunnelto --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+      - name: Publish crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        # Skip a crate whose version is already on crates.io (tunnelto_protocol
+        # often doesn't change between releases).
+        run: |
+          for crate in tunnelto_protocol tunnelto; do
+            version=$(cargo metadata --no-deps --format-version 1 \
+              | jq -r --arg c "$crate" '.packages[] | select(.name == $c) | .version')
+            if curl -sf -A tunnelto-release "https://crates.io/api/v1/crates/$crate/$version" >/dev/null; then
+              echo "$crate $version is already published"
+            else
+              cargo publish --locked -p "$crate"
+            fi
+          done
 
   brew_bump:
     name: Brew bump
