@@ -17,7 +17,7 @@ const SECRET_KEY_FILE: &'static str = "key.token";
 /// Command line arguments
 #[derive(Debug, Parser)]
 #[command(
-    name = "tunnelto",
+    name = "tunn",
     version,
     author = "support@tunnelto.dev",
     about = "Expose your local web server to the internet with a public url."
@@ -95,7 +95,7 @@ impl Config {
                     .file_stem()
                     .map(|s| s.to_string_lossy().into_owned())
             })
-            .unwrap_or_else(|| "tunnelto".to_string());
+            .unwrap_or_else(|| "tunn".to_string());
         let matches = Opts::command().bin_name(bin_name).get_matches();
         let opts = Opts::from_arg_matches(&matches).unwrap_or_else(|e| e.exit());
 

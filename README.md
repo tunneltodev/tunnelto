@@ -39,18 +39,21 @@ Or **Download a release for your target OS here**: [tunnelto/releases](https://g
 ## Quick Start
 
 ```shell script
-tunnelto --port 8000
+tunn --port 8000
 ```
 
 The above command opens a tunnel and forwards traffic to `localhost:8000`.
 
+The command is `tunn`. The original name, `tunnelto`, is installed alongside it
+and works the same way.
+
 ## More Options:
 
 ```shell script
-tunnelto 0.1.20
+tunn 0.2.0
 
 USAGE:
-    tunnelto [FLAGS] [OPTIONS] [SUBCOMMAND]
+    tunn [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information

@@ -7,7 +7,7 @@ description: >-
   mobile app against a local backend, or give another agent or person a public
   URL for something running on this machine. Triggers: "tunnel", "expose
   localhost", "public URL", "ngrok alternative", "webhook to localhost",
-  "tunnelto", "tunn.dev".
+  "tunnelto", "tunn", "tunn.dev".
 metadata:
   source: https://github.com/tunneltodev/tunnelto/tree/main/skills/tunnelto
   homepage: https://tunnelto.dev
@@ -16,19 +16,22 @@ metadata:
 
 # tunnelto
 
-`tunnelto` is a single-binary CLI that opens a tunnel from a public
-`https://<subdomain>.tunnelto.dev` (or `https://<subdomain>.tunn.dev`) URL to a
-port on this machine. It runs in the
+`tunn` is a single-binary CLI that opens a tunnel from a public
+`https://<subdomain>.tunn.dev` URL to a port on this machine. It runs in the
 foreground and keeps the tunnel open until the process exits.
+
+The CLI is also installed as `tunnelto`, its original name, which takes the
+same flags. Installs from before CLI 0.2.0 only have `tunnelto`: if `tunn` is
+missing but `tunnelto` exists, use `tunnelto` in the commands below.
 
 ## 1. Check for and install the CLI
 
 ```bash
-command -v tunnelto || curl -sL https://tunnelto.dev/install.sh | sh
+command -v tunn || command -v tunnelto || curl -sL https://tunnelto.dev/install.sh | sh
 ```
 
-The installer puts the binary in `~/.tunnelto/bin`; if `tunnelto` is still not
-on `PATH` afterwards, use `~/.tunnelto/bin/tunnelto` or export
+The installer puts the binary in `~/.tunnelto/bin`; if `tunn` is still not
+on `PATH` afterwards, use `~/.tunnelto/bin/tunn` or export
 `PATH="$HOME/.tunnelto/bin:$PATH"`. Alternatives: `brew install
 tunneltodev/tap/tunnelto`, `cargo install tunnelto`, or a release binary from
 https://github.com/tunneltodev/tunnelto/releases.
@@ -38,7 +41,7 @@ https://github.com/tunneltodev/tunnelto/releases.
 An access key comes from https://tunnelto.dev/dashboard. Store it once:
 
 ```bash
-tunnelto set-auth --key <ACCESS_KEY>
+tunn set-auth --key <ACCESS_KEY>
 ```
 
 The key is saved to `~/.tunnelto/key.token` and used automatically. To use a
@@ -50,25 +53,24 @@ still works: it opens an anonymous tunnel on a generated subdomain, and
 
 ```bash
 # forward https://<random>.tunn.dev -> http://localhost:8000
-tunnelto --port 8000
+tunn --port 8000
 
-# with a reserved subdomain (paid plan): https://myapp.tunnelto.dev
-tunnelto --port 8000 --subdomain myapp
+# with a reserved subdomain (paid plan): https://myapp.tunn.dev
+tunn --port 8000 --subdomain myapp
 ```
 
 The process blocks. From an agent, run it in the background, write its output
 to a file, and read the public URL back from that file:
 
 ```bash
-tunnelto --port 8000 > /tmp/tunnelto.log 2>&1 &
+tunn --port 8000 > /tmp/tunnelto.log 2>&1 &
 echo $! > /tmp/tunnelto.pid
 
 # wait for the URL (all status output is on stderr; it is merged above).
-# The URL can be on tunnelto.dev or tunn.dev; the log contains ANSI codes,
-# so strip them before matching.
+# The log contains ANSI codes, so strip them before matching.
 for i in $(seq 1 30); do
   URL=$(sed 's/\x1b\[[0-9;]*m//g' /tmp/tunnelto.log \
-    | grep -oE 'https://[a-z0-9-]+\.(tunnelto|tunn)\.dev' | head -1)
+    | grep -oE 'https://[a-z0-9-]+\.tunn\.dev' | head -1)
   [ -n "$URL" ] && break
   sleep 1
 done
@@ -129,7 +131,7 @@ kill "$(cat /tmp/tunnelto.pid)"
   user. Exceeding limits prints `Server terminated connection: ...` and the
   process exits with status 1.
 - `Error: AuthenticationFailed` means the stored or passed key is wrong; get a
-  fresh one from the dashboard and re-run `tunnelto set-auth --key`.
+  fresh one from the dashboard and re-run `tunn set-auth --key`.
 - Nothing is cached locally besides `~/.tunnelto/key.token`; deleting that
   directory fully resets the CLI.
 

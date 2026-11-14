@@ -1,20 +1,22 @@
 [package]
 name = "tunnelto"
 description = "expose your local web server to the internet with a public url"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Alex Grinman <alex@tunnelto.dev>"]
 license = "MIT"
 repository = "https://github.com/tunneltodev/tunnelto"
 readme = "../README.md"
 edition = "2021"
+default-run = "tunn"
 
+# `tunn` is the main command; `tunnelto` is kept as an alias.
 [[bin]]
-name = "tunnelto"
+name = "tunn"
 path = "src/main.rs"
 
 [[bin]]
-name = "tunn"
-path = "src/bin/tunn.rs"
+name = "tunnelto"
+path = "src/bin/tunnelto.rs"
 
 [dependencies]
 tunnelto_protocol = { version = "0.2.0", path = "../tunnelto_protocol" }

@@ -363,7 +363,7 @@ async fn process_control_flow_message(
     Ok(control_packet.clone())
 }
 
-/// Entry point shared by the `tunnelto` and `tunn` binaries.
+/// Entry point shared by the `tunn` binary and its `tunnelto` alias.
 pub async fn cli_main() {
     let config = match Config::get() {
         Ok(config) => config,
