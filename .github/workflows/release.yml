@@ -135,7 +135,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Bump Brew
-        uses: mislav/bump-homebrew-formula-action@v3
+        uses: mislav/bump-homebrew-formula-action@v4.2
         with:
           formula-name: "tunnelto"
           formula-path: "tunnelto.rb"
